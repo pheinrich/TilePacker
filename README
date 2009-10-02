@@ -1,0 +1,50 @@
+TilePacker
+Copyright (c) 2003,2005,2009  Peter Heinrich
+
+This small utility arranges graphic images (stored in separate files) into a
+single PNG to reduce overhead and simplify resource management.  Animation
+frames, for example, might be combined in order to share a palette and allow
+loading with a single call.  This approach is especially effective when many
+small-to-medium images need to be readily accessible--such as icons, badges,
+or other UI elements--particularly in a resource-constrained environment.
+
+Images of any type may be combined, providing ImageIO.read() can load them.
+(An ImageReader of the appropriate type must be registered with the system.)
+This usually means major formats are supported (e.g. PNG, GIF, JPG, etc.).
+The result is always output in 32-bit PNG format in order to avoid palette
+issues; whole applications have been developed around color reduction and
+palette combination/optimization, so that should happen elsewhere.
+
+The program attempts to optimize for area--that is, pack images together as
+closely as possible--limiting the resultant width to 1024 pixels by default.
+No limit is placed on vertical dimension, however, and an error will be
+generated if a maximum width is specified which is smaller than the width of
+any image to be combined (since there's no way it could be made to fit).
+Image orientation is always preserved; images are never rotated.
+
+TilePacker writes XML metadata about the result to stdout, which may then be
+used to translate and clip the combined image to extract any specific tile.
+For example:
+
+   <tileset image="out.png">
+      <tile id="nav-prev.gif" x="0" y="0" w="33" h="26"/>
+      <tile id="upper.png" x="0" y="26" w="42" h="18"/>
+      <tile id="icon-sm.png" x="33" y="0" w="24" h="24"/>
+      <tile id="cursor-wait.gif" x="33" y="24" w="13" h="24"/>
+      <tile id="tinyfont.png" x="0" y="48" w="41" h="6"/>
+      <tile id="folder.png" x="46" y="24" w="12" h="12"/>
+   </tileset>
+
+A special class, say TileSet, could then be instantiated using the data above
+and provide a method for drawing tiles.  For example:
+
+   public void draw( Graphics g, int nWhich, int x, int y )
+   {
+      Rectangle extent = m_aExtents[ nWhich ];      //  loaded from metadata
+      drawRegion( g,
+                  m_Source,                         //  combined image data
+                  extent.x, extent.y,               //  offset to subimage
+                  extent.dx, extent.dy,             //  subimage size
+                  x, y,                             //  screen destination
+                  Graphics.TOP | Graphics.LEFT );
+   }
